@@ -23,8 +23,12 @@
     ],
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/trueeditr/trueeditr.git"
+        "url": "git+https://github.com/TrueEditr/trueeditor.git"
     },
+    "bugs": {
+        "url": "https://github.com/TrueEditr/trueeditor/issues"
+    },
+    "homepage": "https://github.com/TrueEditr/trueeditor#readme",
     "scripts": {
         "dev": "vite",
         "build": "vite build"

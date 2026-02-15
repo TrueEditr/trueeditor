@@ -83,5 +83,9 @@ Configure your webhook in the dashboard, then enable uploads. TrueEditr will pro
 ## 🌐 Dashboard & Enterprise
 Manage your domains, check analytics, and upgrade to Pro at [trueeditr.in](https://trueeditr.in).
 
-## 📄 License
+## 🔗 Links
+- **Source Code**: [GitHub Repository](https://github.com/TrueEditr/trueeditor)
+- **Bug Reports**: [GitHub Issues](https://github.com/TrueEditr/trueeditor/issues)
+
+## � License
 MIT © 2026 TrueEditr Team.
