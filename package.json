@@ -1,0 +1,53 @@
+{
+    "name": "trueeditr",
+    "version": "1.1.2",
+    "description": "The best lightweight AI-native WYSIWYG editor. A faster, cost-effective CKEditor alternative with built-in AI ghost text, smart formatting, and zero bloat (<50KB).",
+    "main": "dist/trueeditr.umd.js",
+    "module": "dist/trueeditr.mjs",
+    "types": "index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./index.d.ts",
+            "import": "./dist/trueeditr.mjs",
+            "require": "./dist/trueeditr.umd.js"
+        }
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "files": [
+        "dist",
+        "src",
+        "index.d.ts",
+        "README.md"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/trueeditr/trueeditr.git"
+    },
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build"
+    },
+    "keywords": [
+        "wysiwyg",
+        "ckeditor-alternative",
+        "ai",
+        "gemini",
+        "gpt-4o",
+        "rich-text",
+        "ai-editor",
+        "lightweight-editor",
+        "ghost-text",
+        "smart-formatting",
+        "pro-editor"
+    ],
+    "author": "TrueEditr Team",
+    "license": "MIT",
+    "dependencies": {
+        "dompurify": "^3.0.0"
+    },
+    "devDependencies": {
+        "vite": "^5.0.0"
+    }
+}
