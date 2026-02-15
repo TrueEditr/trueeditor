@@ -604,20 +604,26 @@ class TrueEditr {
             console.log('🟡 Popover element created:', popover);
 
             // Check if we have a selection to determine default label
-            // Fix: Use document.getSelection() instead of shadow.getSelection()
-            const selection = document.getSelection();
+            const selection = this.shadow.getSelection();
             const hasSelection = selection && selection.rangeCount > 0 && !selection.getRangeAt(0).collapsed;
             const actionLabel = hasSelection ? "Replace Selection" : "Insert";
 
             popover.innerHTML = `
                 <div class="true-ai-header">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>
-                    <span>TrueEditr AI</span>
-                    <button class="true-ai-close-btn" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#9ca3af;">&times;</button>
+                    <span>TrueEditr AI Assistant</span>
+                    <button class="true-ai-close-btn" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#9ca3af;font-size:1.5rem;">&times;</button>
+                </div>
+
+                <div class="true-ai-special-actions" style="display:flex; gap:0.5rem; padding:0 0.5rem 0.5rem 0.5rem; flex-wrap:wrap;">
+                    <button class="true-ai-action-chip" data-action="grammar">✨ Fix Grammar</button>
+                    <button class="true-ai-action-chip" data-action="improve">📝 Improve</button>
+                    ${hasSelection ? `<button class="true-ai-action-chip" data-action="summarize">📊 Summarize</button>` : ''}
+                    <button class="true-ai-action-chip" data-action="translate">🌍 Translate</button>
                 </div>
 
                 <!-- Custom Prompts Quick Actions -->
-                <div class="true-ai-prompts" style="display:flex; gap:0.5rem; padding:0 0.5rem 0.5rem 0.5rem; flex-wrap:wrap;">
+                <div class="true-ai-prompts" style="display:flex; gap:0.5rem; padding:0 0.5rem 0.75rem 0.5rem; flex-wrap:wrap; border-bottom: 1px solid #f1f5f9; margin-bottom: 0.5rem;">
                     ${this.aiConfig?.customPrompts?.map((p, i) => `
                         <button class="true-ai-prompt-chip" data-index="${i}" title="${p.text.replace(/"/g, '&quot;')}">${p.title}</button>
                     `).join('') || ''}
@@ -628,8 +634,7 @@ class TrueEditr {
                 </div>
                 
                 <!-- Result Area (Hidden initially) -->
-                <!-- UPDATED: Increased max-height to 250px for better reading -->
-                <div class="true-ai-result" style="display:none; margin-top:0.75rem; padding:0.75rem; background:#f8fafc; border-radius:6px; font-size:0.9rem; color:#334155; max-height:250px; overflow-y:auto; line-height:1.5;"></div>
+                <div class="true-ai-result" style="display:none; margin-top:0.75rem; padding:0.75rem; background:#f8fafc; border-radius:8px; font-size:0.9rem; color:#334155; max-height:250px; overflow-y:auto; line-height:1.5; border: 1px solid #e2e8f0;"></div>
 
                 <div class="true-ai-footer" style="margin-top:0.75rem;">
                     <div class="true-ai-shortcuts" id="true-ai-hints">
@@ -639,7 +644,7 @@ class TrueEditr {
                     
                     <div class="true-ai-actions" style="display:none; gap:0.5rem; width:100%; justify-content:flex-end;">
                         <button class="true-ai-btn-sec" id="true-ai-copy">Copy</button> 
-                        <button class="true-ai-btn-sec" id="true-ai-retry">Retry</button>
+                        <button class="true-ai-btn-sec" id="true-ai-retry">New Prompt</button>
                         <button class="true-ai-gen-btn" id="true-ai-confirm">${actionLabel}</button>
                     </div>
 
@@ -648,11 +653,7 @@ class TrueEditr {
             `;
 
             console.log('🟡 Popover HTML set');
-            console.log('🟡 About to append to wrapper...');
             this.wrapper.appendChild(popover);
-            console.log('🟡 Popover appended! Checking if in DOM...');
-            console.log('🟡 Popover parent:', popover.parentNode);
-            console.log('🟡 Popover in wrapper:', this.wrapper.contains(popover));
 
             // Add secondary button styles if not present
             if (!this.shadow.querySelector('#true-ai-styles')) {
@@ -661,8 +662,10 @@ class TrueEditr {
                 style.textContent = `
                     .true-ai-btn-sec { background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.4rem 0.8rem; font-size: 0.85rem; cursor: pointer; color: #475569; transition: all 0.2s; }
                     .true-ai-btn-sec:hover { background: #f1f5f9; color: #0f172a; border-color: #cbd5e1; }
-                    .true-ai-prompt-chip { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 20px; padding: 0.25rem 0.75rem; font-size: 0.75rem; color: #475569; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-                    .true-ai-prompt-chip:hover { background: #e2e8f0; color: #0f172a; border-color: #cbd5e1; }
+                    .true-ai-prompt-chip, .true-ai-action-chip { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 20px; padding: 0.25rem 0.75rem; font-size: 0.75rem; color: #475569; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+                    .true-ai-prompt-chip:hover, .true-ai-action-chip:hover { background: #e2e8f0; color: #0f172a; border-color: #cbd5e1; }
+                    .true-ai-action-chip { background: #f5f3ff; color: #7c3aed; border-color: #ddd6fe; font-weight: 600; }
+                    .true-ai-action-chip:hover { background: #ede9fe; }
                 `;
                 this.shadow.appendChild(style);
             }
@@ -677,12 +680,25 @@ class TrueEditr {
                     if (prompt) {
                         input.value = prompt.text;
                         input.focus();
-                        // Optional: Auto-submit?
-                        // performGenerate(); 
-                        // Let user review first usually better
                     }
                 };
             });
+
+            // Bind Special Actions
+            popover.querySelectorAll('.true-ai-action-chip').forEach(btn => {
+                btn.onclick = () => {
+                    const action = btn.getAttribute('data-action');
+                    let prompt = "";
+                    if (action === 'grammar') prompt = "Fix grammar and spelling mistakes.";
+                    else if (action === 'improve') prompt = "Improve the writing style and clarity.";
+                    else if (action === 'summarize') prompt = "Summarize this content briefly.";
+                    else if (action === 'translate') prompt = "Translate this to Hindi (or specify language in prompt).";
+
+                    input.value = prompt;
+                    performGenerate(action);
+                };
+            });
+
             const resultArea = popover.querySelector('.true-ai-result');
             const footerActions = popover.querySelector('.true-ai-actions');
             const generateBtn = popover.querySelector('#true-ai-generate');
@@ -698,49 +714,34 @@ class TrueEditr {
 
             // Default dimensions
             const popoverWidth = 380;
-            const popoverHeight = 300;
+            const popoverHeight = 350; // Increased for new buttons
             popover.style.maxHeight = `${popoverHeight}px`;
             popover.style.zIndex = '9999';
 
             if (aiBtn) {
                 const btnRect = aiBtn.getBoundingClientRect();
-
-                // Calculate position relative to wrapper
-                // Wrapper is typically position: relative, so we need offset from wrapper top-left
-                let top = btnRect.bottom - wrapperRect.top + 8; // 8px spacing
+                let top = btnRect.bottom - wrapperRect.top + 8;
                 let left = btnRect.left - wrapperRect.left;
 
-                // Check Horizontal Overflow
                 if (left + popoverWidth > wrapperRect.width) {
-                    left = wrapperRect.width - popoverWidth - 10; // Align right with padding
+                    left = wrapperRect.width - popoverWidth - 10;
                 }
 
-                // Check Vertical Overflow (if not enough space below, flip up)
                 if (top + popoverHeight > wrapperRect.height) {
-                    // Try positioning above
                     const topAbove = btnRect.top - wrapperRect.top - popoverHeight - 8;
-                    if (topAbove > 0) {
-                        top = topAbove;
-                    } else {
-                        // If tight on both sides, prefer whichever has more space / clamp it
-                        top = Math.max(10, wrapperRect.height - popoverHeight - 10);
-                    }
+                    if (topAbove > 0) top = topAbove;
+                    else top = Math.max(10, wrapperRect.height - popoverHeight - 10);
                 }
 
                 popover.style.top = `${top}px`;
-                popover.style.left = `${Math.max(10, left)}px`; // Ensure not off-screen left
-
-                console.log('AI Popover Anchored to Button:', { top, left });
+                popover.style.left = `${Math.max(10, left)}px`;
             } else {
-                // Fallback to Center if button not found
                 const centerTop = (wrapperRect.height - popoverHeight) / 2;
                 const centerLeft = (wrapperRect.width - popoverWidth) / 2;
                 popover.style.top = `${Math.max(20, centerTop)}px`;
                 popover.style.left = `${Math.max(20, centerLeft)}px`;
-                console.log('AI Popover Centered (Button not found)');
             }
 
-            // Prevent clicks inside popover from bubbling (avoid conflict with editor listeners)
             popover.addEventListener('mousedown', (e) => e.stopPropagation());
             popover.addEventListener('click', (e) => e.stopPropagation());
 
@@ -750,7 +751,6 @@ class TrueEditr {
                 resolve(val);
             };
 
-            // Handle outside click
             const outsideClick = (e) => {
                 const path = e.composedPath();
                 if (!path.includes(popover)) {
@@ -763,8 +763,7 @@ class TrueEditr {
             let generatedText = "";
             let isGenerating = false;
 
-            const performGenerate = async () => {
-                if (isGenerating) return;
+            const performGenerate = async (action = 'complete') => {
                 const prompt = input.value.trim();
                 if (!prompt) return;
 
@@ -775,17 +774,18 @@ class TrueEditr {
 
                 try {
                     if (onGenerate) {
-                        const res = await onGenerate(prompt, context);
+                        const res = await onGenerate(prompt, context, action);
                         if (res && res.success) {
                             generatedText = res.text;
 
-                            // Switch to Result View
                             input.style.display = 'none';
                             hints.style.display = 'none';
                             generateBtn.style.display = 'none';
+                            popover.querySelector('.true-ai-special-actions').style.display = 'none';
+                            popover.querySelector('.true-ai-prompts').style.display = 'none';
 
                             resultArea.style.display = 'block';
-                            resultArea.innerHTML = generatedText.replace(/\\n/g, '<br>');
+                            resultArea.innerHTML = generatedText; // Already sanitized from server or handle it
 
                             footerActions.style.display = 'flex';
                         } else {
@@ -793,7 +793,6 @@ class TrueEditr {
                             resetUI();
                         }
                     } else {
-                        // Fallback close if no callback (shouldn't happen with new logic)
                         close(prompt);
                     }
                 } catch (e) {
@@ -814,18 +813,20 @@ class TrueEditr {
                 generateBtn.style.display = 'block';
                 generateBtn.innerText = "Generate";
                 generateBtn.disabled = false;
+                popover.querySelector('.true-ai-special-actions').style.display = 'flex';
+                popover.querySelector('.true-ai-prompts').style.display = 'flex';
 
                 resultArea.style.display = 'none';
                 footerActions.style.display = 'none';
             };
 
-            generateBtn.onclick = performGenerate;
+            generateBtn.onclick = () => performGenerate('complete');
             closeBtn.onclick = () => close(null);
 
             input.onkeydown = (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    performGenerate();
+                    performGenerate('complete');
                 }
                 if (e.key === 'Escape') close(null);
             };
@@ -836,7 +837,7 @@ class TrueEditr {
             };
 
             popover.querySelector('#true-ai-copy').onclick = () => {
-                navigator.clipboard.writeText(generatedText);
+                navigator.clipboard.writeText(generatedText.replace(/<[^>]*>/g, '')); // Copy clean text
                 const btn = popover.querySelector('#true-ai-copy');
                 const originalText = btn.innerText;
                 btn.innerText = "Copied!";

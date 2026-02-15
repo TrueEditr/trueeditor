@@ -84,8 +84,8 @@ Configure your webhook in the dashboard, then enable uploads. TrueEditr will pro
 Manage your domains, check analytics, and upgrade to Pro at [trueeditr.in](https://trueeditr.in).
 
 ## 🔗 Links
-- **Source Code**: [GitHub Repository](https://github.com/TrueEditr/trueeditor)
-- **Bug Reports**: [GitHub Issues](https://github.com/TrueEditr/trueeditor/issues)
+- **Source Code**: [https://github.com/TrueEditr/trueeditor](https://github.com/TrueEditr/trueeditor)
+- **Bug Reports**: [https://github.com/TrueEditr/trueeditor/issues](https://github.com/TrueEditr/trueeditor/issues)
 
 ## � License
 MIT © 2026 TrueEditr Team.

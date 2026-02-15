@@ -155,8 +155,7 @@ export default class ToolbarPlugin extends BasePlugin {
         const aiPlugin = this.editor.plugins.get('ai');
 
         // Context: Selection or Full Text
-        // Fix: Use document.getSelection() instead of shadow.getSelection()
-        const selection = document.getSelection();
+        const selection = this.editor.shadow.getSelection();
         console.log('🟢 Selection object:', selection);
 
         const hasSelection = selection && selection.rangeCount > 0 && !selection.getRangeAt(0).collapsed;
@@ -173,9 +172,9 @@ export default class ToolbarPlugin extends BasePlugin {
         }
 
         // Callback to bridge Popover UI with AI Plugin
-        const onGenerate = async (prompt, textContext) => {
-            console.log('🟢 onGenerate called with prompt:', prompt);
-            return await aiPlugin.generateResponse(prompt, textContext);
+        const onGenerate = async (prompt, textContext, action) => {
+            console.log('🟢 onGenerate called with prompt:', prompt, 'action:', action);
+            return await aiPlugin.generateResponse(prompt, textContext, action);
         };
 
         console.log('🟢 Calling showAIPopover with context:', context ? context.substring(0, 50) + '...' : 'empty');
@@ -193,7 +192,7 @@ export default class ToolbarPlugin extends BasePlugin {
 
                 // EXPLICIT DELETE for "Replace Selection" logic
                 // This ensures we don't just append if typeEffect gets confused
-                document.execCommand('delete');
+                // But AIPlugin.typeEffect now handles this internally too.
             }
             // Now insert the new text (typeEffect will just insert at cursor now)
             aiPlugin.handleAIResponse(result.text);

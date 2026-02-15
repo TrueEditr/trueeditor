@@ -1,4 +1,4 @@
-class y {
+class x {
   constructor(e) {
     this.editor = e;
   }
@@ -31,7 +31,7 @@ class y {
   destroy() {
   }
 }
-class P extends y {
+class M extends x {
   constructor(e) {
     super(e), this.buttons = [];
   }
@@ -107,11 +107,11 @@ class P extends y {
       }
       if (t.type === "dropdown") {
         const n = document.createElement("select");
-        n.className = "true-toolbar-select", n.title = t.title, t.options.forEach((a) => {
+        n.className = "true-toolbar-select", n.title = t.title, t.options.forEach((s) => {
           const l = document.createElement("option");
-          l.value = a.value, l.textContent = a.label, a.value === "3" && (l.selected = !0), n.appendChild(l);
-        }), n.onchange = (a) => {
-          t.action(a.target.value);
+          l.value = s.value, l.textContent = s.label, s.value === "3" && (l.selected = !0), n.appendChild(l);
+        }), n.onchange = (s) => {
+          t.action(s.target.value);
         }, e.appendChild(n), this.buttons.push({ ...t, element: n });
         return;
       }
@@ -126,9 +126,9 @@ class P extends y {
     });
   }
   async showAIPrompt() {
-    var h, u;
+    var h, p;
     console.log("🔵 AI Button Clicked!"), console.log("AI Config:", this.editor.aiConfig);
-    const e = (h = this.editor.aiConfig) == null ? void 0 : h.enabled, r = (u = this.editor.aiConfig) == null ? void 0 : u.configured;
+    const e = (h = this.editor.aiConfig) == null ? void 0 : h.enabled, r = (p = this.editor.aiConfig) == null ? void 0 : p.configured;
     if (console.log("AI Enabled:", e, "AI Configured:", r), !e) {
       console.log("❌ AI NOT ENABLED - Showing settings modal"), await this.editor.showSettingsModal("AI features are currently disabled. Please enable AI in Dashboard Settings and configure your Gemini API key.");
       return;
@@ -138,24 +138,24 @@ class P extends y {
       return;
     }
     console.log("✅ AI is enabled and configured. Creating popover...");
-    const o = this.editor.plugins.get("ai"), t = document.getSelection();
+    const o = this.editor.plugins.get("ai"), t = this.editor.shadow.getSelection();
     console.log("🟢 Selection object:", t);
     const i = t && t.rangeCount > 0 && !t.getRangeAt(0).collapsed;
     console.log("🟢 Has selection:", i);
     const n = i ? t.toString() : this.editor.editor.innerText;
     console.log("🟢 Context:", n ? n.substring(0, 50) + "..." : "empty");
-    let a = null;
-    i && (a = t.getRangeAt(0).cloneRange(), console.log("🟢 Saved range:", a));
-    const l = async (p, m) => (console.log("🟢 onGenerate called with prompt:", p), await o.generateResponse(p, m));
+    let s = null;
+    i && (s = t.getRangeAt(0).cloneRange(), console.log("🟢 Saved range:", s));
+    const l = async (m, g, b) => (console.log("🟢 onGenerate called with prompt:", m, "action:", b), await o.generateResponse(m, g, b));
     console.log("🟢 Calling showAIPopover with context:", n ? n.substring(0, 50) + "..." : "empty");
-    const c = await this.editor.showAIPopover(n, l);
-    if (console.log("🟢 showAIPopover returned:", c), c && c.action === "accept") {
-      if (a) {
+    const u = await this.editor.showAIPopover(n, l);
+    if (console.log("🟢 showAIPopover returned:", u), u && u.action === "accept") {
+      if (s) {
         this.editor.editor.focus();
-        const p = this.editor.shadow.getSelection();
-        p.removeAllRanges(), p.addRange(a), document.execCommand("delete");
+        const m = this.editor.shadow.getSelection();
+        m.removeAllRanges(), m.addRange(s);
       }
-      o.handleAIResponse(c.text);
+      o.handleAIResponse(u.text);
     }
   }
   updateState() {
@@ -169,7 +169,7 @@ class P extends y {
     });
   }
 }
-class R extends y {
+class P extends x {
   constructor(e) {
     super(e), this.history = [], this.index = -1, this.maxHistory = 50, this.isLocked = !1;
   }
@@ -193,21 +193,35 @@ class R extends y {
     this.editor.editor.innerHTML = e, this.editor.updateToolbar();
   }
 }
-class B extends y {
+class R extends x {
   constructor(e) {
-    super(e), this.menu = null, this.active = !1;
+    super(e), this.menu = null, this.active = !1, this.savedRange = null;
   }
   init() {
     this.editor.editor.addEventListener("keydown", (e) => {
       (e.ctrlKey || e.metaKey) && e.key === "/" ? (e.preventDefault(), this.showMenu()) : this.active && e.key === "Escape" && this.hideMenu();
-    }), document.addEventListener("click", (e) => {
-      this.active && !this.menu.contains(e.target) && this.hideMenu();
+    }), this.editor.editor.addEventListener("keyup", (e) => {
+      if (e.key === "/" && !this.active) {
+        const r = this.editor.shadow.getSelection();
+        r.rangeCount > 0 && (r.getRangeAt(0).startContainer.textContent || "") === "/" && this.showMenu();
+      }
+    }), document.addEventListener("mousedown", (e) => {
+      if (this.active) {
+        const r = e.composedPath();
+        this.menu && !r.includes(this.menu) && this.hideMenu();
+      }
     });
   }
   showMenu() {
     if (this.menu) return;
-    this.menu = document.createElement("div"), this.menu.className = "true-slash-menu";
-    const e = {
+    const e = this.editor.shadow.getSelection();
+    e.rangeCount > 0 && (this.savedRange = e.getRangeAt(0).cloneRange()), this.menu = document.createElement("div"), this.menu.className = "true-slash-menu";
+    const r = {
+      Formatting: [
+        { cmd: "bold", label: "Bold", icon: "Bold" },
+        { cmd: "italic", label: "Italic", icon: "Italic" },
+        { cmd: "underline", label: "Underline", icon: "Underline" }
+      ],
       Essentials: [
         { cmd: "h1", label: "Heading 1", icon: "Type" },
         { cmd: "h2", label: "Heading 2", icon: "Type" },
@@ -220,40 +234,49 @@ class B extends y {
         { cmd: "code", label: "Code Block", icon: "Code" },
         { cmd: "source", label: "Source Code", icon: "FileCode" }
       ]
-    }, r = (t, i) => {
-      const n = i ? `style="color: ${i}"` : "";
-      return t === "Sparkles" ? `<svg ${n} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="m5 3 1 2"/><path d="m19 21 1-2"/><path d="m5 21 1-2"/><path d="m19 3 1-2"/></svg>` : t === "Grid" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>' : t === "Code" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>' : t === "FileCode" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m10 13-2 2 2 2"/><path d="m14 17 2-2-2-2"/></svg>' : t === "Type" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>' : t === "Image" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>' : t === "Link" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>' : t;
+    }, o = (i, n) => {
+      const s = n ? `style="color: ${n}"` : "";
+      return i === "Sparkles" ? `<svg ${s} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="m5 3 1 2"/><path d="m19 21 1-2"/><path d="m5 21 1-2"/><path d="m19 3 1-2"/></svg>` : i === "Grid" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>' : i === "Code" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>' : i === "FileCode" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m10 13-2 2 2 2"/><path d="m14 17 2-2-2-2"/></svg>' : i === "Type" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>' : i === "Bold" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/></svg>' : i === "Italic" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>' : i === "Underline" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v6a6 6 0 0 0 12 0V4"/><line x1="4" y1="20" x2="20" y2="20"/></svg>' : i === "Image" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>' : i === "Link" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>' : i;
     };
-    let o = "";
-    for (const [t, i] of Object.entries(e))
-      o += `<div class="true-slash-group-title">${t}</div>`, o += i.map((n) => {
-        const a = !this.editor.hasFeature(n.cmd), l = a ? '<span class="true-slash-lock">🔒</span>' : "", c = a ? "opacity: 0.6;" : "";
+    let t = "";
+    for (const [i, n] of Object.entries(r))
+      t += `<div class="true-slash-group-title">${i}</div>`, t += n.map((s) => {
+        const l = !this.editor.hasFeature(s.cmd), u = l ? '<span class="true-slash-lock">🔒</span>' : "", h = l ? "opacity: 0.6;" : "";
         return `
-                <div class="true-slash-item" data-cmd="${n.cmd}" style="${c}">
-                    <span class="true-slash-icon">${r(n.icon, n.color)}</span>
+                <div class="true-slash-item" data-cmd="${s.cmd}" style="${h}">
+                    <span class="true-slash-icon">${o(s.icon, s.color)}</span>
                     <span class="true-slash-label">
-                        ${n.label}
-                        ${n.cmd === "ai" ? '<span class="true-slash-badge">FREE</span>' : ""}
+                        ${s.label}
+                        ${s.cmd === "ai" ? '<span class="true-slash-badge">FREE</span>' : ""}
                     </span>
-                    ${l}
+                    ${u}
                 </div>`;
       }).join("");
-    this.menu.innerHTML = o, this.editor.scrollArea.appendChild(this.menu), this.active = !0, this.positionMenu(), this.menu.addEventListener("click", (t) => {
-      const i = t.target.closest(".true-slash-item");
-      i && (t.stopPropagation(), this.handleCommand(i.dataset.cmd), this.hideMenu());
+    this.menu.innerHTML = t, this.editor.scrollArea.appendChild(this.menu), this.active = !0, this.positionMenu(), this.menu.addEventListener("mousedown", (i) => {
+      const n = i.target.closest(".true-slash-item");
+      if (n) {
+        if (i.preventDefault(), i.stopPropagation(), this.savedRange) {
+          const s = this.savedRange.startContainer;
+          s.textContent === "/" && (s.textContent = "");
+        }
+        this.handleCommand(n.dataset.cmd), this.hideMenu();
+      }
     });
   }
   positionMenu() {
-    const e = this.editor.shadow ? this.editor.shadow.getSelection() : window.getSelection();
+    if (!this.menu) return;
+    const e = this.editor.shadow.getSelection();
     if (e.rangeCount > 0) {
-      const o = e.getRangeAt(0).getBoundingClientRect(), t = this.editor.wrapper.getBoundingClientRect();
-      this.menu.parentElement !== this.editor.wrapper && this.editor.wrapper.appendChild(this.menu);
-      let i = o.bottom - t.top + 5, n = o.left - t.left;
-      n + 260 > t.width && (n = t.width - 270), i + 300 > t.height && (i = o.top - t.top - 310), this.menu.style.top = `${i}px`, this.menu.style.left = `${n}px`;
+      const o = e.getRangeAt(0).getBoundingClientRect(), t = this.editor.scrollArea.getBoundingClientRect();
+      let i = o.bottom - t.top + this.editor.scrollArea.scrollTop + 8, n = o.left - t.left + this.editor.scrollArea.scrollLeft;
+      const s = 260, l = 350;
+      n + s > this.editor.scrollArea.clientWidth && (n = Math.max(10, this.editor.scrollArea.clientWidth - s - 20));
+      const u = this.editor.scrollArea.scrollTop + 10;
+      this.editor.scrollArea.scrollTop + this.editor.scrollArea.clientHeight - l - 10, this.editor.scrollArea.clientHeight - (o.bottom - t.top) < l && o.top - t.top > l && (i = o.top - t.top + this.editor.scrollArea.scrollTop - l - 8), this.menu.style.top = `${Math.max(u, i)}px`, this.menu.style.left = `${Math.max(10, n)}px`, this.menu.style.zIndex = "9999";
     }
   }
   hideMenu() {
-    this.menu && (this.menu.remove(), this.menu = null, this.active = !1);
+    this.menu && (this.menu.remove(), this.menu = null, this.active = !1, this.savedRange = null);
   }
   handleCommand(e) {
     var o;
@@ -262,11 +285,15 @@ class B extends y {
       e === "code" && (t = "Code Block"), e === "source" && (t = "Source Code"), this.editor.showUpgradeModal(t.charAt(0).toUpperCase() + t.slice(1), "pro");
       return;
     }
+    if (this.editor.editor.focus(), this.savedRange) {
+      const t = this.editor.shadow.getSelection();
+      t.removeAllRanges(), t.addRange(this.savedRange);
+    }
     const r = this.editor.plugins.get("insert");
-    e === "h1" ? this.editor.execCommand("formatBlock", "h1") : e === "h2" ? this.editor.execCommand("formatBlock", "h2") : e === "image" ? r.insertImage() : e === "link" ? r.insertLink() : e === "table" ? r.insertTable() : e === "code" ? this.editor.execCommand("formatBlock", "pre") : e === "ai" ? (o = this.editor.plugins.get("toolbar")) == null || o.showAIPrompt() : e === "source" && this.editor.toggleSourceMode();
+    e === "bold" ? this.editor.execCommand("bold") : e === "italic" ? this.editor.execCommand("italic") : e === "underline" ? this.editor.execCommand("underline") : e === "h1" ? this.editor.execCommand("formatBlock", "h1") : e === "h2" ? this.editor.execCommand("formatBlock", "h2") : e === "image" ? r.insertImage() : e === "link" ? r.insertLink() : e === "table" ? r.insertTable() : e === "code" ? this.editor.execCommand("formatBlock", "pre") : e === "ai" ? (o = this.editor.plugins.get("toolbar")) == null || o.showAIPrompt() : e === "source" && this.editor.toggleSourceMode();
   }
 }
-class z extends y {
+class B extends x {
   init() {
     this.setupImageResizing();
   }
@@ -287,14 +314,14 @@ class z extends y {
     let r = !1, o, t;
     const i = (n) => {
       n.preventDefault(), r = !0, o = n.clientX, t = e.clientWidth;
-      const a = (c) => {
+      const s = (u) => {
         if (!r) return;
-        const h = c.clientX - o;
+        const h = u.clientX - o;
         e.style.width = t + h + "px", e.style.height = "auto";
       }, l = () => {
-        r = !1, document.removeEventListener("mousemove", a), document.removeEventListener("mouseup", l), this.editor.saveHistory();
+        r = !1, document.removeEventListener("mousemove", s), document.removeEventListener("mouseup", l), this.editor.saveHistory();
       };
-      document.addEventListener("mousemove", a), document.addEventListener("mouseup", l);
+      document.addEventListener("mousemove", s), document.addEventListener("mouseup", l);
     };
     e.onmousedown = i;
   }
@@ -349,7 +376,7 @@ class z extends y {
     o += "</table><p><br></p>", this.editor.execCommand("insertHTML", o);
   }
 }
-class j extends y {
+class z extends x {
   init() {
     this.initGhostText();
   }
@@ -395,9 +422,9 @@ class j extends y {
   }
   acceptGhost(e) {
     const r = e.innerText;
-    e.remove(), this.editor.execCommand("insertText", r);
+    e.remove(), this.editor.editor.focus(), this.insertAtCursor(r);
   }
-  async generateResponse(e, r) {
+  async generateResponse(e, r, o = "complete") {
     try {
       return await (await fetch(`${this.editor.apiUrl}/editor/ai-completion`, {
         method: "POST",
@@ -405,20 +432,26 @@ class j extends y {
         body: JSON.stringify({
           apiKey: this.editor.apiKey,
           prompt: e,
-          context: r
+          context: r,
+          action: o
         })
       })).json();
-    } catch (o) {
-      return console.error("AI Connection Error:", o), { success: !1, error: o.message };
+    } catch (t) {
+      return console.error("AI Connection Error:", t), { success: !1, error: t.message };
     }
   }
   async handleAIResponse(e) {
-    this.editor.editor.focus(), await this.typeEffect(e);
+    this.editor.editor.focus(), this.clearGhost(), await this.typeEffect(e);
   }
-  // Deprecated but kept for compatibility if needed
-  async handleAIRequest(e, r) {
-    const o = await this.generateResponse(e, r);
-    o.success && await this.handleAIResponse(o.text);
+  // Helper for direct insertion without type effect if needed
+  insertAtCursor(e) {
+    const r = this.editor.shadow.getSelection();
+    if (r.rangeCount) {
+      const o = r.getRangeAt(0);
+      o.deleteContents();
+      const t = document.createTextNode(e);
+      o.insertNode(t), o.setStartAfter(t), o.setEndAfter(t), r.removeAllRanges(), r.addRange(o), this.editor.saveHistory();
+    }
   }
   async typeEffect(e) {
     const r = this.editor.plugins.get("history");
@@ -428,26 +461,27 @@ class j extends y {
     const t = Array.from(o.childNodes);
     this.editor.editor.focus();
     const i = this.editor.shadow.getSelection();
-    i.rangeCount > 0 && !i.getRangeAt(0).collapsed && document.execCommand("delete");
+    i.rangeCount > 0 && !i.getRangeAt(0).collapsed && i.getRangeAt(0).deleteContents();
     for (const n of t)
       if (n.nodeType === Node.TEXT_NODE) {
-        const a = n.textContent.split("");
-        for (const l of a) {
-          document.execCommand("insertText", !1, l);
-          const c = Math.floor(Math.random() * 20) + 10;
-          await new Promise((h) => setTimeout(h, c));
+        const s = n.textContent.split("");
+        for (const l of s) {
+          this.editor.editor.focus(), document.execCommand("insertText", !1, l);
+          const u = Math.floor(Math.random() * 15) + 5;
+          await new Promise((h) => setTimeout(h, u));
         }
       } else {
-        const a = n.nodeType === Node.ELEMENT_NODE ? n.outerHTML : n.textContent;
-        document.execCommand("insertHTML", !1, a), await new Promise((l) => setTimeout(l, 20));
+        this.editor.editor.focus();
+        const s = n.nodeType === Node.ELEMENT_NODE ? n.outerHTML : n.textContent;
+        document.execCommand("insertHTML", !1, s), await new Promise((l) => setTimeout(l, 20));
       }
-    r && (r.isLocked = !1, r.save()), this.editor.saveLocalContent();
+    r && (r.isLocked = !1, r.save()), this.editor.saveLocalContent(), this.editor.updateToolbar();
   }
   checkPlan() {
     return !0;
   }
 }
-class N extends y {
+class j extends x {
   constructor(e) {
     super(e), this.statusElement = null;
   }
@@ -474,7 +508,7 @@ class N extends y {
   updateState() {
   }
 }
-class $ extends y {
+class N extends x {
   constructor(e) {
     super(e), this.shortcuts = {
       "# ": "h1",
@@ -499,24 +533,24 @@ class $ extends y {
     const o = r.getRangeAt(0), t = o.startContainer;
     if (t.nodeType !== Node.TEXT_NODE) return;
     const i = t.textContent.substring(0, o.startOffset) + " ";
-    for (const [n, a] of Object.entries(this.shortcuts))
+    for (const [n, s] of Object.entries(this.shortcuts))
       if (i.endsWith(n)) {
         e.preventDefault();
         const l = o.startOffset - (n.length - 1);
         t.textContent = t.textContent.substring(0, l) + t.textContent.substring(o.startOffset);
-        const c = document.createRange();
-        c.setStart(t, l), c.collapse(!0), r.removeAllRanges(), r.addRange(c);
-        let h = a, u = null;
-        if (a.includes(":") && ([h, u] = a.split(":")), this.editor.execCommand(h), u) {
-          const p = this.editor.shadow.getSelection();
-          if (p.rangeCount > 0) {
-            let m = p.getRangeAt(0).startContainer;
-            for (; m && m !== this.editor.editor; ) {
-              if (m.tagName === "OL") {
-                m.setAttribute("type", u);
+        const u = document.createRange();
+        u.setStart(t, l), u.collapse(!0), r.removeAllRanges(), r.addRange(u);
+        let h = s, p = null;
+        if (s.includes(":") && ([h, p] = s.split(":")), this.editor.execCommand(h), p) {
+          const m = this.editor.shadow.getSelection();
+          if (m.rangeCount > 0) {
+            let g = m.getRangeAt(0).startContainer;
+            for (; g && g !== this.editor.editor; ) {
+              if (g.tagName === "OL") {
+                g.setAttribute("type", p);
                 break;
               }
-              m = m.parentElement;
+              g = g.parentElement;
             }
           }
         }
@@ -553,7 +587,7 @@ class $ extends y {
   updateState() {
   }
 }
-class F extends y {
+class H extends x {
   init() {
   }
   exportPDF() {
@@ -586,7 +620,7 @@ class F extends y {
     document.body.appendChild(n), n.href = i, n.download = "document.doc", n.click(), document.body.removeChild(n);
   }
 }
-class H {
+class $ {
   constructor(e) {
     if (this.apiKey = e.key, this.selector = e.selector, this.apiUrl = e.apiUrl || (typeof window < "u" ? `${window.location.origin}/api` : "https://trueeditr.in/api"), this.plugins = /* @__PURE__ */ new Map(), this.isSourceMode = !1, this.history = [], this.historyIndex = -1, this.plan = "free", this.tierFeatures = {
       free: [
@@ -678,7 +712,7 @@ class H {
         `;
   }
   renderEditor() {
-    this.shadow = this.container.attachShadow({ mode: "open" }), this.wrapper = document.createElement("div"), this.wrapper.className = "true-editor-wrapper", this.injectStyles(), this.toolbar = document.createElement("div"), this.toolbar.className = "true-editor-toolbar", this.wrapper.appendChild(this.toolbar), this.scrollArea = document.createElement("div"), this.scrollArea.className = "true-editor-scroll-area", this.wrapper.appendChild(this.scrollArea), this.editor = document.createElement("div"), this.editor.className = "true-editor-content", this.editor.contentEditable = !0, this.scrollArea.appendChild(this.editor), this.sourceArea = document.createElement("textarea"), this.sourceArea.className = "true-editor-content true-editor-source", this.sourceArea.style.display = "none", this.scrollArea.appendChild(this.sourceArea), this.footer = document.createElement("div"), this.footer.className = "true-editor-footer", this.wrapper.appendChild(this.footer), this.shadow.appendChild(this.wrapper), this.registerPlugin("history", R), this.registerPlugin("status", N), this.registerPlugin("insert", z), this.registerPlugin("ai", j), this.registerPlugin("markdown", $), this.registerPlugin("export", F), this.registerPlugin("toolbar", P), this.registerPlugin("slash", B), this.updateUIForPlan(), this.loadLocalContent(), this.setupEventListeners();
+    this.shadow = this.container.attachShadow({ mode: "open" }), this.wrapper = document.createElement("div"), this.wrapper.className = "true-editor-wrapper", this.injectStyles(), this.toolbar = document.createElement("div"), this.toolbar.className = "true-editor-toolbar", this.wrapper.appendChild(this.toolbar), this.scrollArea = document.createElement("div"), this.scrollArea.className = "true-editor-scroll-area", this.wrapper.appendChild(this.scrollArea), this.editor = document.createElement("div"), this.editor.className = "true-editor-content", this.editor.contentEditable = !0, this.scrollArea.appendChild(this.editor), this.sourceArea = document.createElement("textarea"), this.sourceArea.className = "true-editor-content true-editor-source", this.sourceArea.style.display = "none", this.scrollArea.appendChild(this.sourceArea), this.footer = document.createElement("div"), this.footer.className = "true-editor-footer", this.wrapper.appendChild(this.footer), this.shadow.appendChild(this.wrapper), this.registerPlugin("history", P), this.registerPlugin("status", j), this.registerPlugin("insert", B), this.registerPlugin("ai", z), this.registerPlugin("markdown", N), this.registerPlugin("export", H), this.registerPlugin("toolbar", M), this.registerPlugin("slash", R), this.updateUIForPlan(), this.loadLocalContent(), this.setupEventListeners();
   }
   injectStyles() {
     const e = document.createElement("style");
@@ -1087,33 +1121,40 @@ class H {
             `, this.wrapper.appendChild(t);
       const i = t.querySelector("input");
       i.focus(), i.select();
-      const n = (a) => {
-        t.remove(), o(a);
+      const n = (s) => {
+        t.remove(), o(s);
       };
-      t.querySelector("#true-ok").onclick = () => n(i.value), t.querySelector("#true-cancel").onclick = () => n(null), i.onkeydown = (a) => {
-        a.key === "Enter" && n(i.value), a.key === "Escape" && n(null);
-      }, t.onclick = (a) => {
-        a.target === t && n(null);
+      t.querySelector("#true-ok").onclick = () => n(i.value), t.querySelector("#true-cancel").onclick = () => n(null), i.onkeydown = (s) => {
+        s.key === "Enter" && n(i.value), s.key === "Escape" && n(null);
+      }, t.onclick = (s) => {
+        s.target === t && n(null);
       };
     });
   }
   showAIPopover(e = "", r = null) {
     return console.log("🟡 showAIPopover called with:", { context: e == null ? void 0 : e.substring(0, 30), onGenerate: !!r }), console.log("🟡 this.wrapper:", this.wrapper), console.log("🟡 this.shadow:", this.shadow), new Promise((o) => {
-      var A, I;
+      var T, A;
       const t = document.createElement("div");
       t.className = "true-ai-popover", console.log("🟡 Popover element created:", t);
-      const i = document.getSelection(), a = i && i.rangeCount > 0 && !i.getRangeAt(0).collapsed ? "Replace Selection" : "Insert";
+      const i = this.shadow.getSelection(), n = i && i.rangeCount > 0 && !i.getRangeAt(0).collapsed, s = n ? "Replace Selection" : "Insert";
       if (t.innerHTML = `
                 <div class="true-ai-header">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>
-                    <span>TrueEditr AI</span>
-                    <button class="true-ai-close-btn" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#9ca3af;">&times;</button>
+                    <span>TrueEditr AI Assistant</span>
+                    <button class="true-ai-close-btn" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#9ca3af;font-size:1.5rem;">&times;</button>
+                </div>
+
+                <div class="true-ai-special-actions" style="display:flex; gap:0.5rem; padding:0 0.5rem 0.5rem 0.5rem; flex-wrap:wrap;">
+                    <button class="true-ai-action-chip" data-action="grammar">✨ Fix Grammar</button>
+                    <button class="true-ai-action-chip" data-action="improve">📝 Improve</button>
+                    ${n ? '<button class="true-ai-action-chip" data-action="summarize">📊 Summarize</button>' : ""}
+                    <button class="true-ai-action-chip" data-action="translate">🌍 Translate</button>
                 </div>
 
                 <!-- Custom Prompts Quick Actions -->
-                <div class="true-ai-prompts" style="display:flex; gap:0.5rem; padding:0 0.5rem 0.5rem 0.5rem; flex-wrap:wrap;">
-                    ${((I = (A = this.aiConfig) == null ? void 0 : A.customPrompts) == null ? void 0 : I.map((s, d) => `
-                        <button class="true-ai-prompt-chip" data-index="${d}" title="${s.text.replace(/"/g, "&quot;")}">${s.title}</button>
+                <div class="true-ai-prompts" style="display:flex; gap:0.5rem; padding:0 0.5rem 0.75rem 0.5rem; flex-wrap:wrap; border-bottom: 1px solid #f1f5f9; margin-bottom: 0.5rem;">
+                    ${((A = (T = this.aiConfig) == null ? void 0 : T.customPrompts) == null ? void 0 : A.map((a, d) => `
+                        <button class="true-ai-prompt-chip" data-index="${d}" title="${a.text.replace(/"/g, "&quot;")}">${a.title}</button>
                     `).join("")) || ""}
                 </div>
 
@@ -1122,8 +1163,7 @@ class H {
                 </div>
                 
                 <!-- Result Area (Hidden initially) -->
-                <!-- UPDATED: Increased max-height to 250px for better reading -->
-                <div class="true-ai-result" style="display:none; margin-top:0.75rem; padding:0.75rem; background:#f8fafc; border-radius:6px; font-size:0.9rem; color:#334155; max-height:250px; overflow-y:auto; line-height:1.5;"></div>
+                <div class="true-ai-result" style="display:none; margin-top:0.75rem; padding:0.75rem; background:#f8fafc; border-radius:8px; font-size:0.9rem; color:#334155; max-height:250px; overflow-y:auto; line-height:1.5; border: 1px solid #e2e8f0;"></div>
 
                 <div class="true-ai-footer" style="margin-top:0.75rem;">
                     <div class="true-ai-shortcuts" id="true-ai-hints">
@@ -1133,80 +1173,86 @@ class H {
                     
                     <div class="true-ai-actions" style="display:none; gap:0.5rem; width:100%; justify-content:flex-end;">
                         <button class="true-ai-btn-sec" id="true-ai-copy">Copy</button> 
-                        <button class="true-ai-btn-sec" id="true-ai-retry">Retry</button>
-                        <button class="true-ai-gen-btn" id="true-ai-confirm">${a}</button>
+                        <button class="true-ai-btn-sec" id="true-ai-retry">New Prompt</button>
+                        <button class="true-ai-gen-btn" id="true-ai-confirm">${s}</button>
                     </div>
 
                     <button class="true-ai-gen-btn" id="true-ai-generate">Generate</button>
                 </div>
-            `, console.log("🟡 Popover HTML set"), console.log("🟡 About to append to wrapper..."), this.wrapper.appendChild(t), console.log("🟡 Popover appended! Checking if in DOM..."), console.log("🟡 Popover parent:", t.parentNode), console.log("🟡 Popover in wrapper:", this.wrapper.contains(t)), !this.shadow.querySelector("#true-ai-styles")) {
-        const s = document.createElement("style");
-        s.id = "true-ai-styles", s.textContent = `
+            `, console.log("🟡 Popover HTML set"), this.wrapper.appendChild(t), !this.shadow.querySelector("#true-ai-styles")) {
+        const a = document.createElement("style");
+        a.id = "true-ai-styles", a.textContent = `
                     .true-ai-btn-sec { background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.4rem 0.8rem; font-size: 0.85rem; cursor: pointer; color: #475569; transition: all 0.2s; }
                     .true-ai-btn-sec:hover { background: #f1f5f9; color: #0f172a; border-color: #cbd5e1; }
-                    .true-ai-prompt-chip { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 20px; padding: 0.25rem 0.75rem; font-size: 0.75rem; color: #475569; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-                    .true-ai-prompt-chip:hover { background: #e2e8f0; color: #0f172a; border-color: #cbd5e1; }
-                `, this.shadow.appendChild(s);
+                    .true-ai-prompt-chip, .true-ai-action-chip { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 20px; padding: 0.25rem 0.75rem; font-size: 0.75rem; color: #475569; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+                    .true-ai-prompt-chip:hover, .true-ai-action-chip:hover { background: #e2e8f0; color: #0f172a; border-color: #cbd5e1; }
+                    .true-ai-action-chip { background: #f5f3ff; color: #7c3aed; border-color: #ddd6fe; font-weight: 600; }
+                    .true-ai-action-chip:hover { background: #ede9fe; }
+                `, this.shadow.appendChild(a);
       }
       const l = t.querySelector("#true-ai-field");
-      t.querySelectorAll(".true-ai-prompt-chip").forEach((s) => {
-        s.onclick = () => {
-          const d = s.getAttribute("data-index"), x = this.aiConfig.customPrompts[d];
-          x && (l.value = x.text, l.focus());
+      t.querySelectorAll(".true-ai-prompt-chip").forEach((a) => {
+        a.onclick = () => {
+          const d = a.getAttribute("data-index"), c = this.aiConfig.customPrompts[d];
+          c && (l.value = c.text, l.focus());
+        };
+      }), t.querySelectorAll(".true-ai-action-chip").forEach((a) => {
+        a.onclick = () => {
+          const d = a.getAttribute("data-action");
+          let c = "";
+          d === "grammar" ? c = "Fix grammar and spelling mistakes." : d === "improve" ? c = "Improve the writing style and clarity." : d === "summarize" ? c = "Summarize this content briefly." : d === "translate" && (c = "Translate this to Hindi (or specify language in prompt)."), l.value = c, L(d);
         };
       });
-      const c = t.querySelector(".true-ai-result"), h = t.querySelector(".true-ai-actions"), u = t.querySelector("#true-ai-generate"), p = t.querySelector("#true-ai-hints"), m = t.querySelector(".true-ai-close-btn");
+      const u = t.querySelector(".true-ai-result"), h = t.querySelector(".true-ai-actions"), p = t.querySelector("#true-ai-generate"), m = t.querySelector("#true-ai-hints"), g = t.querySelector(".true-ai-close-btn");
       setTimeout(() => l.focus(), 50);
-      const E = this.wrapper.querySelector("#true-ai-toolbar-btn"), f = this.wrapper.getBoundingClientRect(), k = 380, b = 300;
-      if (t.style.maxHeight = `${b}px`, t.style.zIndex = "9999", E) {
-        const s = E.getBoundingClientRect();
-        let d = s.bottom - f.top + 8, x = s.left - f.left;
-        if (x + k > f.width && (x = f.width - k - 10), d + b > f.height) {
-          const M = s.top - f.top - b - 8;
-          M > 0 ? d = M : d = Math.max(10, f.height - b - 10);
+      const b = this.wrapper.querySelector("#true-ai-toolbar-btn"), y = this.wrapper.getBoundingClientRect(), C = 380, v = 350;
+      if (t.style.maxHeight = `${v}px`, t.style.zIndex = "9999", b) {
+        const a = b.getBoundingClientRect();
+        let d = a.bottom - y.top + 8, c = a.left - y.left;
+        if (c + C > y.width && (c = y.width - C - 10), d + v > y.height) {
+          const I = a.top - y.top - v - 8;
+          I > 0 ? d = I : d = Math.max(10, y.height - v - 10);
         }
-        t.style.top = `${d}px`, t.style.left = `${Math.max(10, x)}px`, console.log("AI Popover Anchored to Button:", { top: d, left: x });
+        t.style.top = `${d}px`, t.style.left = `${Math.max(10, c)}px`;
       } else {
-        const s = (f.height - b) / 2, d = (f.width - k) / 2;
-        t.style.top = `${Math.max(20, s)}px`, t.style.left = `${Math.max(20, d)}px`, console.log("AI Popover Centered (Button not found)");
+        const a = (y.height - v) / 2, d = (y.width - C) / 2;
+        t.style.top = `${Math.max(20, a)}px`, t.style.left = `${Math.max(20, d)}px`;
       }
-      t.addEventListener("mousedown", (s) => s.stopPropagation()), t.addEventListener("click", (s) => s.stopPropagation());
-      const v = (s) => {
-        t.remove(), document.removeEventListener("mousedown", S), o(s);
-      }, S = (s) => {
-        s.composedPath().includes(t) || v(null);
+      t.addEventListener("mousedown", (a) => a.stopPropagation()), t.addEventListener("click", (a) => a.stopPropagation());
+      const w = (a) => {
+        t.remove(), document.removeEventListener("mousedown", S), o(a);
+      }, S = (a) => {
+        a.composedPath().includes(t) || w(null);
       };
       setTimeout(() => document.addEventListener("mousedown", S), 10);
-      let w = "", C = !1;
-      const T = async () => {
-        if (C) return;
-        const s = l.value.trim();
-        if (s) {
-          C = !0, l.disabled = !0, u.innerText = "Thinking...", u.disabled = !0;
+      let k = "";
+      const L = async (a = "complete") => {
+        const d = l.value.trim();
+        if (d) {
+          l.disabled = !0, p.innerText = "Thinking...", p.disabled = !0;
           try {
             if (r) {
-              const d = await r(s, e);
-              d && d.success ? (w = d.text, l.style.display = "none", p.style.display = "none", u.style.display = "none", c.style.display = "block", c.innerHTML = w.replace(/\\n/g, "<br>"), h.style.display = "flex") : (await this.showSettingsModal((d == null ? void 0 : d.error) || "Failed to generate AI response. Please try again."), L());
+              const c = await r(d, e, a);
+              c && c.success ? (k = c.text, l.style.display = "none", m.style.display = "none", p.style.display = "none", t.querySelector(".true-ai-special-actions").style.display = "none", t.querySelector(".true-ai-prompts").style.display = "none", u.style.display = "block", u.innerHTML = k, h.style.display = "flex") : (await this.showSettingsModal((c == null ? void 0 : c.error) || "Failed to generate AI response. Please try again."), E());
             } else
-              v(s);
-          } catch (d) {
-            console.error(d), await this.showSettingsModal("An error occurred while generating content. Please try again."), L();
+              w(d);
+          } catch (c) {
+            console.error(c), await this.showSettingsModal("An error occurred while generating content. Please try again."), E();
           } finally {
-            C = !1;
           }
         }
-      }, L = () => {
-        l.style.display = "block", l.disabled = !1, l.focus(), p.style.display = "flex", u.style.display = "block", u.innerText = "Generate", u.disabled = !1, c.style.display = "none", h.style.display = "none";
+      }, E = () => {
+        l.style.display = "block", l.disabled = !1, l.focus(), m.style.display = "flex", p.style.display = "block", p.innerText = "Generate", p.disabled = !1, t.querySelector(".true-ai-special-actions").style.display = "flex", t.querySelector(".true-ai-prompts").style.display = "flex", u.style.display = "none", h.style.display = "none";
       };
-      u.onclick = T, m.onclick = () => v(null), l.onkeydown = (s) => {
-        s.key === "Enter" && !s.shiftKey && (s.preventDefault(), T()), s.key === "Escape" && v(null);
+      p.onclick = () => L("complete"), g.onclick = () => w(null), l.onkeydown = (a) => {
+        a.key === "Enter" && !a.shiftKey && (a.preventDefault(), L("complete")), a.key === "Escape" && w(null);
       }, t.querySelector("#true-ai-confirm").onclick = () => {
-        v({ action: "accept", text: w });
+        w({ action: "accept", text: k });
       }, t.querySelector("#true-ai-copy").onclick = () => {
-        navigator.clipboard.writeText(w);
-        const s = t.querySelector("#true-ai-copy"), d = s.innerText;
-        s.innerText = "Copied!", setTimeout(() => s.innerText = d, 1e3);
-      }, t.querySelector("#true-ai-retry").onclick = L;
+        navigator.clipboard.writeText(k.replace(/<[^>]*>/g, ""));
+        const a = t.querySelector("#true-ai-copy"), d = a.innerText;
+        a.innerText = "Copied!", setTimeout(() => a.innerText = d, 1e3);
+      }, t.querySelector("#true-ai-retry").onclick = E;
     });
   }
   showUpgradeModal(e, r) {
@@ -1351,5 +1397,5 @@ class H {
   }
 }
 export {
-  H as default
+  $ as default
 };

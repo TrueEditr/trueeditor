@@ -69,8 +69,6 @@ export default class AIPlugin extends BasePlugin {
         if (!text) return;
         // Clean text
         text = text.replace(/^ /, ''); // Remove leading space if implies continuation? 
-        // Actually, we need to see if we need a space. 
-        // For MVP, just show it.
 
         const span = document.createElement('span');
         span.className = 'true-ghost';
@@ -81,9 +79,6 @@ export default class AIPlugin extends BasePlugin {
         if (sel.rangeCount > 0) {
             const range = sel.getRangeAt(0);
             range.insertNode(span);
-            // Move cursor BEFORE span? No, cursor is at end of text, span is after.
-            // But inserting node moves cursor?
-            // Range collapse to start of span?
             range.setStartBefore(span);
             range.setEndBefore(span);
             sel.removeAllRanges();
@@ -95,11 +90,12 @@ export default class AIPlugin extends BasePlugin {
         const text = ghostNode.innerText;
         ghostNode.remove(); // Remove ghost
 
-        // Insert real text
-        this.editor.execCommand('insertText', text);
+        // Insert real text at proper position
+        this.editor.editor.focus();
+        this.insertAtCursor(text);
     }
 
-    async generateResponse(promptText, context) {
+    async generateResponse(promptText, context, action = 'complete') {
         try {
             const res = await fetch(`${this.editor.apiUrl}/editor/ai-completion`, {
                 method: 'POST',
@@ -107,7 +103,8 @@ export default class AIPlugin extends BasePlugin {
                 body: JSON.stringify({
                     apiKey: this.editor.apiKey,
                     prompt: promptText,
-                    context: context
+                    context: context,
+                    action: action
                 })
             });
             const data = await res.json();
@@ -121,20 +118,32 @@ export default class AIPlugin extends BasePlugin {
     async handleAIResponse(text) {
         // Ensure focus is back in the editor area
         this.editor.editor.focus();
+        
+        // Remove any residual ghost text before typing
+        this.clearGhost();
+        
         await this.typeEffect(text);
     }
 
-    // Deprecated but kept for compatibility if needed
-    async handleAIRequest(promptText, context) {
-        const res = await this.generateResponse(promptText, context);
-        if (res.success) {
-            await this.handleAIResponse(res.text);
+    // Helper for direct insertion without type effect if needed
+    insertAtCursor(text) {
+        const sel = this.editor.shadow.getSelection();
+        if (sel.rangeCount) {
+            const range = sel.getRangeAt(0);
+            range.deleteContents();
+            const textNode = document.createTextNode(text);
+            range.insertNode(textNode);
+            range.setStartAfter(textNode);
+            range.setEndAfter(textNode);
+            sel.removeAllRanges();
+            sel.addRange(range);
+            this.editor.saveHistory();
         }
     }
 
     async typeEffect(html) {
         const historyPlugin = this.editor.plugins.get('history');
-        if (historyPlugin) historyPlugin.isLocked = true; // Lock history to prevent flooding
+        if (historyPlugin) historyPlugin.isLocked = true;
 
         // We use a temporary container to parse the HTML string
         const temp = document.createElement('div');
@@ -143,26 +152,28 @@ export default class AIPlugin extends BasePlugin {
 
         this.editor.editor.focus();
 
-        // 1. Initial cleanup: If there's a selection, delete it once before typing
+        // Ensure we are working with the shadow selection
         const selection = this.editor.shadow.getSelection();
+        
+        // 1. Initial cleanup: If there's a selection, delete it once before typing
         if (selection.rangeCount > 0 && !selection.getRangeAt(0).collapsed) {
-            document.execCommand('delete');
+            const range = selection.getRangeAt(0);
+            range.deleteContents();
         }
 
         for (const node of nodes) {
             if (node.nodeType === Node.TEXT_NODE) {
-                // Type text character by character
                 const chars = node.textContent.split('');
                 for (const char of chars) {
-                    // Check if we need to abort? (Future: Add abort controller)
+                    // Use document.execCommand for better undo history and browser compatibility
+                    // but ensure focus is correct
+                    this.editor.editor.focus();
                     document.execCommand('insertText', false, char);
-                    // 10-30ms random delay for natural feel
-                    const delay = Math.floor(Math.random() * 20) + 10;
+                    const delay = Math.floor(Math.random() * 15) + 5; // Slightly faster typing
                     await new Promise(r => setTimeout(r, delay));
                 }
             } else {
-                // For elements, insert the whole tag at once (can be improved to type inner text later)
-                // We use insertHTML to let browser handle the node insertion at cursor
+                this.editor.editor.focus();
                 const outerHTML = node.nodeType === Node.ELEMENT_NODE ? node.outerHTML : node.textContent;
                 document.execCommand('insertHTML', false, outerHTML);
                 await new Promise(r => setTimeout(r, 20));
@@ -171,12 +182,13 @@ export default class AIPlugin extends BasePlugin {
 
         if (historyPlugin) {
             historyPlugin.isLocked = false;
-            historyPlugin.save(); // Save final state once
+            historyPlugin.save();
         }
         this.editor.saveLocalContent();
+        this.editor.updateToolbar();
     }
 
     checkPlan() {
-        return true; // Trust API for plan-based AI gating
+        return true; 
     }
 }
